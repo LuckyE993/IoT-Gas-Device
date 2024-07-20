@@ -97,6 +97,8 @@ int main(void)
 																					generated_gas_data_get.H2S,generated_gas_data_get.CH4,
 																					generated_dht11_get_data.humi,generated_dht11_get_data.temp);
 		get_wireless_message();
+
+
 		Delay_ms(200);
 		
 		
