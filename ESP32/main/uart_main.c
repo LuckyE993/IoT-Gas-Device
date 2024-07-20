@@ -47,15 +47,41 @@ static void echo_task(void *arg)
     uint8_t *data = (uint8_t *) malloc(BUF_SIZE);
 
     while (1) {
+        
         // Read data from the UART
-        int len = uart_read_bytes(ECHO_UART_PORT_NUM, data, (BUF_SIZE - 1), 20 / portTICK_PERIOD_MS);
-        uart_flush(ECHO_UART_PORT_NUM);
+        // int len = uart_read_bytes(ECHO_UART_PORT_NUM, data, (BUF_SIZE - 1), 20 / portTICK_PERIOD_MS);
+        // uart_flush(ECHO_UART_PORT_NUM);
         // Write data back to the UART
-        uart_write_bytes(ECHO_UART_PORT_NUM, (const char *) data, len);
-        if (len) {
-            data[len] = '\0';
-            ESP_LOGI(TAG, "Recv str: %s", (char *) data);
+        uint16_t len = uart_read_bytes(ECHO_UART_PORT_NUM, data, (BUF_SIZE - 1), 20 / portTICK_PERIOD_MS);
+        while(!len)
+        {
+            uart_cmd_send(MODE_INQUIRY);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            len = uart_read_bytes(ECHO_UART_PORT_NUM, data, (BUF_SIZE - 1), 20 / portTICK_PERIOD_MS);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
         }
+        
+        
+        if (len == 14) 
+        {
+            if(data[0]==0xFF && data[13]==0xFE)
+            {
+               print_sensor_data(data,len);
+               parse_inquiry_frame(data,&response_frame);
+               printf("O2:%d CO:%d H2S:%d CH4:%d temperature:%u.%01u humidity:%u.%01u\n",response_frame.O2,response_frame.CO,response_frame.H2S,response_frame.CH4,
+                                                                              response_frame.temperature_int,response_frame.temperature_dec,
+                                                                              response_frame.humidity_int,response_frame.humidity_dec);
+            }
+            //uart_write_bytes(ECHO_UART_PORT_NUM, (const char *) data, len);
+            
+        }
+        else
+        {
+            ESP_LOGI(TAG, "Received Sensor Data is Not 14 Bytes, is %d", len);
+        }
+
+        uart_flush(ECHO_UART_PORT_NUM);             
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
