@@ -12,7 +12,17 @@
 /*把这个宏设置成非0值 液晶屏使用RGB888色彩，若为0则使用RGB565色彩*/
 #define LCD_RGB_888  0
 
+typedef struct
+{
+	char O2_DISPLAY[6];
+  char CO_DISPLAY[6];
+  char H2S_DISPLAY[6];
+  char CH4_DISPLAY[6];
+	char HUMI_DISPLAY[8];
+  char TEMP_DISPLAY[8];
+}SCREEN_DISPLAY_DATA;
 
+extern SCREEN_DISPLAY_DATA screen_display_data;
 
 #if  LCD_RGB_888
 
@@ -866,8 +876,10 @@ void LCD_DispString_EN_CH( uint16_t usX, uint16_t usY, const uint8_t * pStr );
 void LCD_DisplayStringLine_EN_CH(uint16_t Line, uint8_t *ptr);
 void LCD_DispString_EN_CH ( uint16_t usX, uint16_t usY, const uint8_t * pStr );
 
-
-
+char* hex_to_string(uint16_t hex_value);
+void set_display_data(SCREEN_DISPLAY_DATA* data_display,uint16_t O2,uint16_t CO,uint16_t H2S,uint16_t CH4,uint16_t humi,uint16_t temp);
+char* special_hex_to_string(uint16_t hex_value);
+void initialize_display_data(SCREEN_DISPLAY_DATA* data_display);
 
 
 /**

@@ -54,6 +54,8 @@ int main(void)
 //  
 //	/*³õÊ¼»¯Òº¾§ÆÁ*/
 //  LCD_Init();
+	//init display data
+		initialize_display_data(&screen_display_data);
 //  LCD_LayerInit();
 //  LTDC_Cmd(ENABLE);
 //	
@@ -71,7 +73,6 @@ int main(void)
 //	Palette_Init();
 
 
-//  //Delay(0xfff);
 
 
 
@@ -80,17 +81,24 @@ int main(void)
 		get_humi_temp_info();
 		printf("humi: %04X £¥RH, temp: %04X¡æ \r\n",generated_dht11_get_data.humi,generated_dht11_get_data.temp);
 		get_all_gas_info();
-		printf("GAS O2 %04X\nGAS CO %04X\nGAS H2S %04X\nGAS CH4 %04X\n", 
-		generated_gas_data_get.O2,generated_gas_data_get.CO,generated_gas_data_get.H2S,generated_gas_data_get.CH4);
+		printf("GAS O2 %04X\nGAS CO %04X\nGAS H2S %04X\nGAS CH4 %04X\n",generated_gas_data_get.O2,generated_gas_data_get.CO,
+																																		generated_gas_data_get.H2S,generated_gas_data_get.CH4);
 		printf("------------------Boot Success--------------------\n");
-		
+		set_display_data(&screen_display_data,generated_gas_data_get.O2,generated_gas_data_get.CO,
+																					generated_gas_data_get.H2S,generated_gas_data_get.CH4,
+																					generated_dht11_get_data.humi,generated_dht11_get_data.temp);
 		
   while(1)
 	{
 		LED1_TOGGLE;
 		get_all_gas_info();
 		get_humi_temp_info();
+		set_display_data(&screen_display_data,generated_gas_data_get.O2,generated_gas_data_get.CO,
+																					generated_gas_data_get.H2S,generated_gas_data_get.CH4,
+																					generated_dht11_get_data.humi,generated_dht11_get_data.temp);
 		get_wireless_message();
+
+
 		Delay_ms(200);
 		
 		
