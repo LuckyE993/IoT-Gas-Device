@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/STM32F429/Libraries/CMSIS/Include/**",
+                "${workspaceFolder}/STM32F429/Libraries/STM32F4xx_StdPeriph_Driver/inc/**",
+                "${workspaceFolder}/STM32F429/User/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.22621.0",
+            "cStandard": "c17"
+        }
+    ],
+    "version": 4
+}

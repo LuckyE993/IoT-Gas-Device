@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "gas.h": "c"
+        "gas.h": "c",
+        "fonts.h": "c"
     }
 }
