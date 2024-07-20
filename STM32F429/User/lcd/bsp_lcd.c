@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "./lcd/bsp_lcd.h"
 
-
+SCREEN_DISPLAY_DATA screen_display_data;
 
 /** @addtogroup Utilities
   * @{
@@ -2060,6 +2060,8 @@ void LCD_Init(void)
  LTDC_InitStruct.LTDC_TotalHeigh =VSW+ VBP+LCD_PIXEL_HEIGHT  + VFP-1;
 
  LTDC_Init(&LTDC_InitStruct);
+ 
+ 
 }
 
 /**
@@ -3694,6 +3696,71 @@ void PutPixel(int16_t x, int16_t y)
 #endif
 }
 
+
+// 设置显示数据
+void set_display_data(SCREEN_DISPLAY_DATA* data_display, uint16_t O2, uint16_t CO, uint16_t H2S, uint16_t CH4, uint16_t humi, uint16_t temp) {
+    char* temp_str;
+    
+    temp_str = hex_to_string(O2);
+    strncpy(data_display->O2_DISPLAY, temp_str, 6);
+    free(temp_str);
+    
+    temp_str = hex_to_string(CO);
+    strncpy(data_display->CO_DISPLAY, temp_str, 6);
+    free(temp_str);
+    
+    temp_str = hex_to_string(H2S);
+    strncpy(data_display->H2S_DISPLAY, temp_str, 6);
+    free(temp_str);
+    
+    temp_str = hex_to_string(CH4);
+    strncpy(data_display->CH4_DISPLAY, temp_str, 6);
+    free(temp_str);
+    
+    temp_str = special_hex_to_string(humi);
+    strncpy(data_display->HUMI_DISPLAY, temp_str, 8);
+    free(temp_str);
+    
+    temp_str = special_hex_to_string(temp);
+    strncpy(data_display->TEMP_DISPLAY, temp_str, 8);
+    free(temp_str);
+}
+
+char* hex_to_string(uint16_t hex_value) 
+{
+    // 分配足够的空间来存储结果字符数组
+    // 最大的uint16_t整数是65535，它的字符串表示是5个字符 + 1个终止符
+    uint8_t* result = (char*)malloc(6 * sizeof(char));
+    
+    // 将整数转换为字符串
+    snprintf(result, 6, "%u", hex_value);
+
+    return result;
+}
+
+char* special_hex_to_string(uint16_t hex_value) {
+    // 分离整数部分和小数部分
+    uint8_t integer_part = (hex_value >> 8) & 0xFF;
+    uint8_t decimal_part = hex_value & 0xFF;
+    
+    // 分配足够.......的空间来存储结果字符数组
+    // 最大的格式为 "255.255"，需要6个字符 + 1个终止符
+    uint8_t* result = (char*)malloc(8 * sizeof(char));
+    
+    // 将整数部分和小数部分转换为字符串
+    snprintf(result, 8, "%u.%01u", integer_part, decimal_part);
+
+    return result;
+}
+
+void initialize_display_data(SCREEN_DISPLAY_DATA* data_display) {
+    memset(data_display->O2_DISPLAY, 0, sizeof(data_display->O2_DISPLAY));
+    memset(data_display->CO_DISPLAY, 0, sizeof(data_display->CO_DISPLAY));
+    memset(data_display->H2S_DISPLAY, 0, sizeof(data_display->H2S_DISPLAY));
+    memset(data_display->CH4_DISPLAY, 0, sizeof(data_display->CH4_DISPLAY));
+    memset(data_display->HUMI_DISPLAY, 0, sizeof(data_display->HUMI_DISPLAY));
+    memset(data_display->TEMP_DISPLAY, 0, sizeof(data_display->TEMP_DISPLAY));
+}
 /**
  * @}
  */
