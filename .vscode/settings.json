@@ -1,5 +1,12 @@
 {
     "files.associations": {
-        "gas.h": "c"
+        "gas.h": "c",
+        "freertos.h": "c",
+        "uart.h": "c",
+        "wireless.h": "c",
+        "gpio.h": "c",
+        "gpio_types.h": "c",
+        "stdio.h": "c",
+        "task.h": "c"
     }
 }
