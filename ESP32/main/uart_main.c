@@ -14,6 +14,7 @@
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "wireless.h"
+#include "wifi.h"
 /**
  * This is an example which echos any data it receives on configured UART back to the sender,
  * with hardware flow control turned off. It does not use UART driver event queue.
@@ -59,6 +60,7 @@ static void echo_task(void *arg)
             vTaskDelay(100 / portTICK_PERIOD_MS);
             len = uart_read_bytes(ECHO_UART_PORT_NUM, data, (BUF_SIZE - 1), 20 / portTICK_PERIOD_MS);
             vTaskDelay(100 / portTICK_PERIOD_MS);
+            // ESP_LOGI(TAG,"uart running......\n");
         }
         
         
@@ -82,10 +84,24 @@ static void echo_task(void *arg)
 
         uart_flush(ECHO_UART_PORT_NUM);             
         vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        // ESP_LOGI(TAG,"uart running......\n");
     }
 }
 
 void app_main(void)
 {
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
     xTaskCreate(echo_task, "uart_echo_task", ECHO_TASK_STACK_SIZE, NULL, 10, NULL);
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+      ESP_ERROR_CHECK(nvs_flash_erase());
+      ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    wifi_config_init();
+    
+    
 }
