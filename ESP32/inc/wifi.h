@@ -11,12 +11,14 @@
 #include "esp_wpa2.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
+#include "server.h"
+#include <string.h>
 
 #define MY_WIFI_SSID      "luckye"
 
 #define MY_WIFI_PASSWD      "11223344"
 #define EXAMPLE_ESP_MAXIMUM_RETRY  5
-#define MY_WIFI_UPDATE  4093                /* 对数值进行修改表示更新NVS的WiFi名称和密码*/
+#define MY_WIFI_UPDATE  4092                /* 对数值进行修改表示更新NVS的WiFi名称和密码*/
 
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
 
