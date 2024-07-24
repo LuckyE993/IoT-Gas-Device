@@ -15,6 +15,8 @@
 #include "esp_log.h"
 #include "wireless.h"
 #include "wifi.h"
+#include "server.h"
+
 /**
  * This is an example which echos any data it receives on configured UART back to the sender,
  * with hardware flow control turned off. It does not use UART driver event queue.
@@ -73,6 +75,9 @@ static void echo_task(void *arg)
                printf("O2:%d CO:%d H2S:%d CH4:%d temperature:%u.%01u humidity:%u.%01u\n",response_frame.O2,response_frame.CO,response_frame.H2S,response_frame.CH4,
                                                                               response_frame.temperature_int,response_frame.temperature_dec,
                                                                               response_frame.humidity_int,response_frame.humidity_dec);
+                init_send_json_data(json_string, 1, response_frame.O2, response_frame.CO, response_frame.H2S, response_frame.CH4, 
+                response_frame.temperature_int, response_frame.temperature_dec, response_frame.humidity_int, response_frame.humidity_dec,ip_str,time_str);
+                xEventGroupSetBits(xSendEventGroup,TASK2_SENSOR_COMPLETE);
             }
             //uart_write_bytes(ECHO_UART_PORT_NUM, (const char *) data, len);
             
@@ -92,16 +97,15 @@ static void echo_task(void *arg)
 void app_main(void)
 {
     // vTaskDelay(1000 / portTICK_PERIOD_MS);
-    xTaskCreate(echo_task, "uart_echo_task", ECHO_TASK_STACK_SIZE, NULL, 10, NULL);
+    xTaskCreate(echo_task, "sensor_task", ECHO_TASK_STACK_SIZE, NULL, 10, NULL);
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_ERROR_CHECK(nvs_flash_erase());
       ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
+    send_json_data_init();
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_config_init();
-    
     
 }
