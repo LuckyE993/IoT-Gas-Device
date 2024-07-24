@@ -60,10 +60,10 @@ void parse_inquiry_frame(uint8_t *data,ResponseFrame *frame)
     frame->CO = (data[3] << 8) | data[4];
     frame->H2S = (data[5] << 8) | data[6];
     frame->CH4 = (data[7] << 8) | data[8];
-    frame->humidity_int = data[9];
-    frame->humidity_dec = data[10];
-    frame->temperature_int = data[11];
-    frame->temperature_dec = data[12];
+    frame->temperature_int = data[9];
+    frame->temperature_dec = data[10];
+    frame->humidity_int = data[11];
+    frame->humidity_dec = data[12];
     frame->tail = data[13];
     
 }
