@@ -6,7 +6,7 @@ ESP32完成与STM32传感器进行通讯，获取传感器信息并发送到指�
 
 # 系统示意图
 
-![ESP32时序图.png](pics\ESP32时序图.png)
+![ESP32时序图.png](pics/ESP32时序图.png)
 
 # 接口
 
