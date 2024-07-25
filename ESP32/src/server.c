@@ -7,10 +7,13 @@ static const char *TAG = "HTTP_CLIENT";
 
 char json_string[1024] = "";
 char ip_str[16] = "not connected";  // 全局变量，用于保存IP地址字符串
-char time_str[128] = "not connected";
+char time_str[64] = "not synced";   // 全局变量，用于保存时间字符串
 
 // 创建事件组句柄
 
+static void obtain_time(void);
+static void print_servers(void);
+void time_sync_notification_cb(struct timeval *tv);
 
 extern const char howsmyssl_com_root_cert_pem_start[] asm("_binary_howsmyssl_com_root_cert_pem_start");
 extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com_root_cert_pem_end");
@@ -102,104 +105,9 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     return ESP_OK;
 }
 
-static void http_rest_with_url(void)
-{
-    char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
-    /**
-     * NOTE: All the configuration parameters for http_client must be spefied either in URL or as host and path parameters.
-     * If host and path parameters are not set, query parameter will be ignored. In such cases,
-     * query parameter should be specified in URL.
-     *
-     * If URL as well as host and path parameters are specified, values of host and path will be considered.
-     */
-    esp_http_client_config_t config = {
-        .host = "httpbin.org",
-        .path = "/get",
-        .query = "esp",
-        .event_handler = _http_event_handler,
-        .user_data = local_response_buffer,        // Pass address of local buffer to get response
-        .disable_auto_redirect = true,
-    };
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-
-    esp_err_t err;
-
-    // POST
-    const char *post_data = "{\"field1\":\"value1\"}";
-    esp_http_client_set_url(client, "http://httpbin.org/post");
-    esp_http_client_set_method(client, HTTP_METHOD_POST);
-    esp_http_client_set_header(client, "Content-Type", "application/json");
-    esp_http_client_set_post_field(client, post_data, strlen(post_data));
-    err = esp_http_client_perform(client);
-    if (err == ESP_OK) {
-        ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %"PRIu64,
-                esp_http_client_get_status_code(client),
-                esp_http_client_get_content_length(client));
-    } else {
-        ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
-    }
-    char url[500];
-    esp_http_client_get_url(client,url,500);
-    printf("ADDRSS: %s %s", url, config.path);
-    printf("POST: %s\r\n", post_data);
-    esp_http_client_cleanup(client);
-}
-
-void init_json_data(void) {
-    // 创建根JSON对象
-    cJSON *root = cJSON_CreateObject();
-    if (root == NULL) {
-        printf("Error creating root JSON object\n");
-        
-    }
-
-    // 添加 node_num 属性
-    cJSON_AddNumberToObject(root, "node_num", 1);
-
-    // 创建 data 对象
-    cJSON *data = cJSON_CreateObject();
-    if (data == NULL) {
-        printf("Error creating data JSON object\n");
-        cJSON_Delete(root);
-
-    }
-
-    // 添加各个传感器数据
-    cJSON_AddNumberToObject(data, "O2", 21);
-    cJSON_AddNumberToObject(data, "CO", 5);
-    cJSON_AddNumberToObject(data, "H2S", 3);
-    cJSON_AddNumberToObject(data, "CH4", 10);
-    cJSON_AddNumberToObject(data, "temp", 25);
-    cJSON_AddNumberToObject(data, "humi", 50);
-
-    // 将 data 对象添加到根对象
-    cJSON_AddItemToObject(root, "data", data);
-
-    // 添加 time 和 IP 属性
-    cJSON_AddStringToObject(root, "time", "2024-07-23T12:34:56");
-    cJSON_AddStringToObject(root, "IP", "192.168.1.1");
-
-    // 将JSON对象转换为字符串
-    char *json_string = cJSON_Print(root);
-    if (json_string == NULL) {
-        printf("Error printing JSON string\n");
-        cJSON_Delete(root);
-
-    }
-
-    // 打印生成的JSON字符串
-    printf("%s\n", json_string);
-
-    // 释放内存
-    cJSON_Delete(root);
-    free(json_string);
-
-}
-
 void init_send_json_data(char *json_string, int node_num, 
                     int O2, int CO, int H2S, int CH4, 
-                    int temp_int,int temp_dec,int humi_int,int humi_dec,
-                    char *ip, char *time)
+                    int temp_int,int temp_dec,int humi_int,int humi_dec)
 {
      cJSON *root = cJSON_CreateObject();
     if (root == NULL) {
@@ -231,9 +139,11 @@ void init_send_json_data(char *json_string, int node_num,
     // 将 data 对象添加到根对象
     cJSON_AddItemToObject(root, "data", data);
 
+    get_time();
+
     // 添加 time 和 IP 属性
-    cJSON_AddStringToObject(root, "time", time);
-    cJSON_AddStringToObject(root, "IP", ip);
+    cJSON_AddStringToObject(root, "time", time_str);
+    cJSON_AddStringToObject(root, "IP", ip_str);
 
     // 将JSON对象转换为字符串
     char *json_temp = cJSON_Print(root);
@@ -261,7 +171,7 @@ void generate_and_send_json_data(void *pvParameters)
 
     esp_http_client_config_t config = {
         #ifdef USE_URL
-        .url = "http://192.168.239.51:5000/data",
+        .url = HTTP_URL,
         #else  
         .host = "192.168.239.51",
         .port = 5000,
@@ -274,7 +184,7 @@ void generate_and_send_json_data(void *pvParameters)
         .user_data = local_response_buffer,        // Pass address of local buffer to get response
         .disable_auto_redirect = true,
     };
-    
+
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err;
 
@@ -293,9 +203,10 @@ void generate_and_send_json_data(void *pvParameters)
         uxBits = xEventGroupWaitBits(
         xSendEventGroup,          // 事件组句柄
         TASK1_WIFI_CONNECTED |      // 等待的事件位
-        TASK2_SENSOR_COMPLETE,       
+        TASK2_SENSOR_COMPLETE |
+        TASK3_TIME_SYNCED,       
         false,               // 清除事件位
-        true,               // 等待所有事件位
+        false,               // 等待所有事件位
         portMAX_DELAY         // 等待时间
         );
 
@@ -307,6 +218,10 @@ void generate_and_send_json_data(void *pvParameters)
         {
             printf("TASK2_SENSOR_COMPLETE\n");
         }
+        if (uxBits&TASK3_TIME_SYNCED)
+        {
+            printf("TASK3_TIME_SYNCED\n");
+        }
         
 
         if((uxBits & TASK1_WIFI_CONNECTED) && (uxBits & TASK2_SENSOR_COMPLETE)) // 所有事件位都已完成
@@ -317,13 +232,13 @@ void generate_and_send_json_data(void *pvParameters)
 
             esp_http_client_set_post_field(client, json_string, strlen(json_string));
             err = esp_http_client_perform(client);
+            printf(" Content: %s\n", local_response_buffer);
             if (err == ESP_OK)
             {
                 ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %"PRIu64,
                             esp_http_client_get_status_code(client),
                             esp_http_client_get_content_length(client));
-                printf("Send data successfully\n");
-                printf(" Content: %s\n", local_response_buffer);
+                
             }
             else
             {
@@ -331,7 +246,7 @@ void generate_and_send_json_data(void *pvParameters)
             }
         }
 
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
     esp_http_client_cleanup(client);
@@ -341,5 +256,83 @@ void generate_and_send_json_data(void *pvParameters)
 void send_json_data_init(void)
 {
     xSendEventGroup = xEventGroupCreate();
-    xTaskCreate(generate_and_send_json_data, "generate_and_send_json_data", 8192, NULL, 5, NULL);
+    xTaskCreate(generate_and_send_json_data, "generate_and_send_json_data", 4096, NULL, 5, NULL);
+    xTaskCreate(sync_time_task, "sync_time_task", 2048, NULL, 5, NULL);
+}
+void sync_time_task(void *pvParameter)
+{
+    while (1) {
+        obtain_time();
+        vTaskDelay(1000*60*SNTP_SYNC_PERIOD / portTICK_PERIOD_MS);
+    }
+}
+
+void time_sync_notification_cb(struct timeval *tv)
+{
+    ESP_LOGI(TAG, "Notification of a time synchronization event");
+}
+
+static void print_servers(void)
+{
+    ESP_LOGI(TAG, "List of configured NTP servers:");
+
+    for (uint8_t i = 0; i < SNTP_MAX_SERVERS; ++i){
+        if (esp_sntp_getservername(i)){
+            ESP_LOGI(TAG, "server %d: %s", i, esp_sntp_getservername(i));
+        } else {
+            // we have either IPv4 or IPv6 address, let's print it
+            char buff[INET6_ADDRSTRLEN];
+            ip_addr_t const *ip = esp_sntp_getserver(i);
+            if (ipaddr_ntoa_r(ip, buff, INET6_ADDRSTRLEN) != NULL)
+                ESP_LOGI(TAG, "server %d: %s", i, buff);
+        }
+    }
+}
+
+static void obtain_time(void)
+{
+   
+    ESP_LOGI(TAG, "Initializing and starting SNTP");
+    /*
+     * This is the basic default config with one server and starting the service
+     */
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(SNTP_TIME_SERVER1);
+
+
+    config.sync_cb = time_sync_notification_cb;     // Note: This is only needed if we want
+
+    esp_netif_sntp_init(&config);
+
+    print_servers();
+
+    // wait for time to be 
+    time_t now = 0;
+    struct tm timeinfo = { 0 };
+    int retry = 0;
+    const int retry_count = 15;
+    while (esp_netif_sntp_sync_wait(2000 / portTICK_PERIOD_MS) == ESP_ERR_TIMEOUT && ++retry < retry_count) {
+        ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
+    }
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    esp_netif_sntp_deinit();
+}
+
+void get_time(void)
+{
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    // Set timezone to China Standard Time
+    setenv("TZ", SNTP_TIME_ZONE, 1);
+    tzset();
+    if (timeinfo.tm_year > (2023 - 1900)) 
+    {
+        strftime(time_str, sizeof(time_str), "%c", &timeinfo);
+    }
+    
+    ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", time_str);
 }

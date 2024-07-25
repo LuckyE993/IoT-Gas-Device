@@ -76,7 +76,7 @@ static void echo_task(void *arg)
                                                                               response_frame.temperature_int,response_frame.temperature_dec,
                                                                               response_frame.humidity_int,response_frame.humidity_dec);
                 init_send_json_data(json_string, 1, response_frame.O2, response_frame.CO, response_frame.H2S, response_frame.CH4, 
-                response_frame.temperature_int, response_frame.temperature_dec, response_frame.humidity_int, response_frame.humidity_dec,ip_str,time_str);
+                response_frame.temperature_int, response_frame.temperature_dec, response_frame.humidity_int, response_frame.humidity_dec);
                 xEventGroupSetBits(xSendEventGroup,TASK2_SENSOR_COMPLETE);
             }
             //uart_write_bytes(ECHO_UART_PORT_NUM, (const char *) data, len);

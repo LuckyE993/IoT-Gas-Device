@@ -15,8 +15,7 @@
 
 #define ECHO_UART_PORT_NUM      UART_NUM_2
 #define ECHO_UART_BAUD_RATE     115200
-#define ECHO_TASK_STACK_SIZE    2048
-#define BUF_SIZE                (1024)
+#define BUF_SIZE                (512)
 
 // 模式位定义
 #define MODE_INQUIRY    0x01
