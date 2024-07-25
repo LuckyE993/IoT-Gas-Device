@@ -21,7 +21,7 @@
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 1024
 
-
+#define USE_URL //def is use url, undef is use host and path 
 
 extern char json_string[1024];
 extern char ip_str[16];

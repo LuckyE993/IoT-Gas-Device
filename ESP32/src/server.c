@@ -260,17 +260,26 @@ void generate_and_send_json_data(void *pvParameters)
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
 
     esp_http_client_config_t config = {
-        .url = "http://httpbin.org/post",
+        #ifdef USE_URL
+        .url = "http://192.168.239.51:5000/data",
+        #else  
+        .host = "192.168.239.51",
+        .port = 5000,
+        .path = "/data",
+
+        #endif
+        
         .method = HTTP_METHOD_POST,
         .event_handler = _http_event_handler,
         .user_data = local_response_buffer,        // Pass address of local buffer to get response
         .disable_auto_redirect = true,
     };
+    
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err;
 
     // POST
-    esp_http_client_set_url(client, "http://httpbin.org/post");
+    //esp_http_client_set_url(client, "192.168.239.51:5000");
     esp_http_client_set_method(client, HTTP_METHOD_POST);
     esp_http_client_set_header(client, "Content-Type", "application/json");
 
